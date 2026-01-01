@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oxford 單字系統</title>
+
+<!-- ✅ PWA: Manifest -->
+<link rel="manifest" href="manifest.webmanifest">
+
+<!-- ✅ PWA: iOS 支援 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Oxford Vocab">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- ✅ 顏色（可自行改） -->
+<meta name="theme-color" content="#0b0b0c">
+
+<style>
+:root{
+  --bg:#0b0b0c;
+  --card:#111214;
+  --muted:#9aa0a6;
+  --text:#f1f3f4;
+  --line:#2a2b2f;
+  --chip:#1f2126;
+  --link:#8ab4f8;
+  --good:#34a853;
+  --bad:#ea4335;
+  --danger:#c62828;
+  --primary:#1a73e8;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;
+  line-height:1.55;
+}
+small{color:var(--muted)}
+.container{
+  max-width:980px;
+  margin:0 auto;
+  padding:12px 12px 84px;
+}
+h1{font-size:18px;margin:8px 0 10px;font-weight:900}
+h2{font-size:16px;margin:0;font-weight:900}
+h3{font-size:14px;margin:0 0 10px;font-weight:900}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px;
+  margin-top:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.hidden{display:none}
+
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:10;
+  padding:10px 12px;
+  background:linear-gradient(180deg, rgba(11,11,12,.98), rgba(11,11,12,.78));
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .row{
+  display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 10px;
+  border-radius:999px;
+  background:var(--chip);
+  border:1px solid var(--line);
+  font-size:13px;
+}
+select{
+  background:var(--chip);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:8px 10px;
+  font-size:13px;
+  outline:none;
+}
+
+button{
+  border:1px solid var(--line);
+  background:var(--chip);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+  touch-action: manipulation;
+}
+button.primary{background:var(--primary);border-color:var(--primary)}
+button.good{background:rgba(52,168,83,.18);border-color:rgba(52,168,83,.55);color:#c8f7d2}
+button.bad{background:rgba(234,67,53,.16);border-color:rgba(234,67,53,.55);color:#ffd0cc}
+button.danger{background:rgba(198,40,40,.18);border-color:rgba(198,40,40,.55);color:#ffc9c9}
+button:disabled{opacity:.55;cursor:not-allowed}
+button:active{transform:scale(.99)}
+
+.grid{
+  display:grid;
+  gap:12px;
+  grid-template-columns:1fr;
+}
+@media (min-width: 880px){
+  .grid{grid-template-columns: 1.15fr .85fr;}
+}
+
+textarea{
+  width:100%;
+  min-height:170px;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:#0f1012;
+  color:var(--text);
+  outline:none;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:13px;
+}
+
+.level-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:10px;
+}
+@media (min-width: 520px){
+  .level-grid{grid-template-columns:repeat(5, 1fr)}
+}
+.level-btn{
+  padding:14px 10px;
+  border-radius:16px;
+  font-size:15px;
+  font-weight:900;
+  background:rgba(232,234,237,.06);
+}
+
+.kpi{
+  display:flex;gap:10px;flex-wrap:wrap
+}
+.kpi .pill{
+  background:var(--chip);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:8px 10px;
+  font-size:13px;
+}
+
+.list{margin:0;padding:0;list-style:none}
+.item{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+  border-radius:14px;
+  margin-top:10px;
+}
+.word-btn{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(138,180,248,.10);
+  border:1px solid rgba(138,180,248,.30);
+  color:var(--link);
+  font-size:18px;
+  font-weight:900;
+  text-align:left;
+}
+.word-btn span.meta{
+  font-size:12px;
+  color:rgba(241,243,244,.75);
+  font-weight:700;
+}
+.actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+canvas{
+  width:100%;
+  height:220px;
+  border-radius:12px;
+  background:#0f1012;
+  border:1px solid var(--line);
+}
+.chart-title{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  margin-bottom:8px
+}
+.footer-space{height:56px}
+</style>
+</head>
+
+<body>
+<div class="topbar">
+  <div class="row">
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <span class="badge">📘 <span id="topLevel">未選擇</span></span>
+      <select id="levelSelect">
+        <option value="" selected disabled>選等級</option>
+        <option value="A1">A1</option>
+        <option value="A2">A2</option>
+        <option value="B1">B1</option>
+        <option value="B2">B2</option>
+        <option value="C1">C1</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end">
+      <button id="homeBtn">🏠 首頁</button>
+      <button class="primary" id="drawBtn" disabled>抽新字</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <h1>Oxford 單字系統（PWA）</h1>
+
+  <div id="home">
+    <div class="card">
+      <h3>選擇等級開始</h3>
+      <div class="level-grid">
+        <button class="level-btn" data-level="A1">A1</button>
+        <button class="level-btn" data-level="A2">A2</button>
+        <button class="level-btn" data-level="B1">B1</button>
+        <button class="level-btn" data-level="B2">B2</button>
+        <button class="level-btn" data-level="C1">C1</button>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+      <button class="danger" id="resetAllBtn">💣 全部重置（慎用）</button>
+      <div style="margin-top:8px"><small>提示：全部重置會清掉所有單字庫與進度。</small></div>
+    </div>
+  </div>
+
+  <div id="levelPage" class="hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <h2 id="levelTitle">等級</h2>
+            <button class="danger" id="resetLevelBtn">🔄 重置此等級</button>
+          </div>
+          <div class="kpi" style="margin-top:10px">
+            <div class="pill" id="progressInfo">完成率：0/0（0%）</div>
+            <div class="pill" id="etaInfo">剩餘：0 天</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <h3>📥 單字庫（每行一個）</h3>
+            <button id="saveWordsBtn">儲存單字</button>
+          </div>
+          <textarea id="wordInput" placeholder="patient&#10;anxious&#10;monitor"></textarea>
+          <div style="margin-top:8px"><small>每行一個單字，貼上後按「儲存單字」。</small></div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <h3>📘 今日新單字（20 個）</h3>
+            <button class="primary" id="drawTodayBtn">今日抽取</button>
+          </div>
+          <ul class="list" id="todayList"></ul>
+        </div>
+
+        <div class="card">
+          <h3>🔁 今日複習（記憶曲線）</h3>
+          <ul class="list" id="reviewList"></ul>
+          <div style="margin-top:8px">
+            <small>到期日：1 / 2 / 4 / 7 / 15 / 30 天。「我記得」→ 下一階段；「我忘了」→ 回到 1 天。</small>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="chart-title">
+            <span>📊 每日新學（14 天）</span>
+            <small>（新單字）</small>
+          </div>
+          <canvas id="dailyChart" width="600" height="260"></canvas>
+        </div>
+        <div class="card">
+          <div class="chart-title">
+            <span>📈 每週新學（8 週）</span>
+            <small>（新單字）</small>
+          </div>
+          <canvas id="weeklyChart" width="600" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-space"></div>
+</div>
+
+<script>
+/* ===== 設定 ===== */
+const REVIEW_INTERVALS = [1,2,4,7,15,30];
+const DAILY_NEW_COUNT = 20;
+let currentLevel = "";
+
+/* ===== DOM ===== */
+const $ = (id) => document.getElementById(id);
+const home = $("home");
+const levelPage = $("levelPage");
+const levelTitle = $("levelTitle");
+const topLevel = $("topLevel");
+const levelSelect = $("levelSelect");
+const drawBtn = $("drawBtn");
+const homeBtn = $("homeBtn");
+
+const wordInput = $("wordInput");
+const todayList = $("todayList");
+const reviewList = $("reviewList");
+const progressInfo = $("progressInfo");
+const etaInfo = $("etaInfo");
+
+const dailyChart = $("dailyChart");
+const weeklyChart = $("weeklyChart");
+
+/* ===== 工具 ===== */
+function today(){ return new Date().toISOString().slice(0,10); }
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
+function dayDiff(a,b){ return Math.floor((new Date(b)-new Date(a))/86400000); }
+function oxfordLink(word){ return `https://www.oxfordlearnersdictionaries.com/definition/english/${encodeURIComponent(word)}`; }
+
+/* ✅ 手機穩：用 window.open */
+function openOxford(word){
+  const url = oxfordLink(word);
+  const w = window.open(url, "_blank", "noopener,noreferrer");
+  if(!w) window.location.href = url;
+}
+
+/* ===== 資料 ===== */
+function getWords(level){ return JSON.parse(localStorage.getItem(level+"_words")||"[]"); }
+function getLearned(){ return JSON.parse(localStorage.getItem("learnedWords")||"{}"); }
+function saveLearned(d){ localStorage.setItem("learnedWords", JSON.stringify(d)); }
+function getStats(){ return JSON.parse(localStorage.getItem("studyStats")||"{}"); }
+function saveStats(d){ localStorage.setItem("studyStats", JSON.stringify(d)); }
+
+/* ===== 導航 ===== */
+function openLevel(level){
+  if(!level) return;
+  currentLevel = level;
+  topLevel.textContent = level;
+  levelSelect.value = level;
+  drawBtn.disabled = false;
+
+  home.classList.add("hidden");
+  levelPage.classList.remove("hidden");
+
+  levelTitle.textContent = `${level} 等級`;
+  wordInput.value = getWords(level).join("\n");
+
+  updateStatsUI();
+  renderToday([]);
+  renderReview();
+  drawCharts();
+}
+function goHome(){
+  levelPage.classList.add("hidden");
+  home.classList.remove("hidden");
+  topLevel.textContent = "未選擇";
+  drawBtn.disabled = true;
+}
+
+/* ===== 單字庫 ===== */
+function saveWords(){
+  const words=[...new Set(wordInput.value.split(/\n+/).map(w=>w.trim()).filter(Boolean))];
+  localStorage.setItem(currentLevel+"_words", JSON.stringify(words));
+  updateStatsUI();
+  alert("✅ 已儲存單字");
+}
+
+/* ===== 學習統計 ===== */
+function logDailyStudy(count){
+  const s=getStats();
+  const t=today();
+  s[t]=(s[t]||0)+count;
+  saveStats(s);
+}
+
+/* ===== 抽今日新字（跨天不重複） ===== */
+function drawToday(){
+  if(!currentLevel) return alert("請先選等級");
+  const words = getWords(currentLevel);
+  if(!words.length) return alert("請先貼入並儲存單字");
+
+  const learned = getLearned();
+  const unlearned = words.filter(w => !learned[w]);
+
+  if(unlearned.length === 0){
+    alert("此等級已抽完，將重置此等級學習紀錄後重新開始。");
+    Object.keys(learned).forEach(w=>{ if(learned[w].level===currentLevel) delete learned[w]; });
+    saveLearned(learned);
+    updateStatsUI();
+    renderToday([]);
+    renderReview();
+    return;
+  }
+
+  shuffle(unlearned);
+  const todayWords = unlearned.slice(0, DAILY_NEW_COUNT);
+  const t=today();
+
+  todayWords.forEach(w=>{
+    learned[w] = { level: currentLevel, learnedDate: t, stage: 0 };
+  });
+  saveLearned(learned);
+  logDailyStudy(todayWords.length);
+
+  renderToday(todayWords);
+  updateStatsUI();
+  renderReview();
+  drawCharts();
+}
+
+/* ===== 我記得 / 我忘了 ===== */
+function mark(word, remembered){
+  const learned = getLearned();
+  const data = learned[word];
+  if(!data) return;
+
+  if(remembered) data.stage = Math.min(data.stage + 1, REVIEW_INTERVALS.length - 1);
+  else data.stage = 0;
+
+  data.learnedDate = today();
+  saveLearned(learned);
+  renderReview();
+}
+
+/* ===== 顯示 ===== */
+function renderToday(words){
+  todayList.innerHTML="";
+  if(!words.length){
+    const li=document.createElement("li");
+    li.className="item";
+    li.innerHTML = `<small>今天尚未抽新字</small>`;
+    todayList.appendChild(li);
+    return;
+  }
+
+  words.forEach(w=>{
+    const li=document.createElement("li");
+    li.className="item";
+
+    const btn=document.createElement("button");
+    btn.className="word-btn";
+    btn.type="button";
+    btn.innerHTML = `<span>🔗 ${w}</span><span class="meta">Oxford</span>`;
+    btn.addEventListener("click", ()=>openOxford(w), {passive:true});
+
+    li.appendChild(btn);
+    todayList.appendChild(li);
+  });
+}
+
+function renderReview(){
+  reviewList.innerHTML="";
+  const learned=getLearned();
+  const t=today();
+  let count=0;
+
+  Object.entries(learned).forEach(([w,d])=>{
+    if(d.level!==currentLevel) return;
+    const diff = dayDiff(d.learnedDate, t);
+    const due = REVIEW_INTERVALS[d.stage];
+
+    if(diff === due){
+      const li=document.createElement("li");
+      li.className="item";
+
+      const btn=document.createElement("button");
+      btn.className="word-btn";
+      btn.type="button";
+      btn.innerHTML = `<span>🔗 ${w}</span><span class="meta">第 ${diff} 天</span>`;
+      btn.addEventListener("click", ()=>openOxford(w), {passive:true});
+
+      const actions=document.createElement("div");
+      actions.className="actions";
+
+      const b1=document.createElement("button");
+      b1.className="good";
+      b1.type="button";
+      b1.textContent="我記得";
+      b1.addEventListener("click", ()=>mark(w,true), {passive:true});
+
+      const b2=document.createElement("button");
+      b2.className="bad";
+      b2.type="button";
+      b2.textContent="我忘了";
+      b2.addEventListener("click", ()=>mark(w,false), {passive:true});
+
+      actions.appendChild(b1);
+      actions.appendChild(b2);
+
+      li.appendChild(btn);
+      li.appendChild(actions);
+      reviewList.appendChild(li);
+      count++;
+    }
+  });
+
+  if(count===0){
+    const li=document.createElement("li");
+    li.className="item";
+    li.innerHTML=`<small>今天沒有到期複習</small>`;
+    reviewList.appendChild(li);
+  }
+}
+
+/* ===== 完成率 / 剩餘天數 ===== */
+function updateStatsUI(){
+  const words=getWords(currentLevel);
+  const learned=getLearned();
+  const learnedCount = Object.values(learned).filter(d=>d.level===currentLevel).length;
+  const total=words.length;
+  const percent = total ? Math.round(learnedCount/total*100) : 0;
+  const remaining = Math.max(total - learnedCount, 0);
+  const daysLeft = total ? Math.ceil(remaining / DAILY_NEW_COUNT) : 0;
+
+  progressInfo.textContent = `完成率：${learnedCount}/${total}（${percent}%）`;
+  etaInfo.textContent = `剩餘：約 ${daysLeft} 天`;
+}
+
+/* ===== 重置 ===== */
+function resetLevel(){
+  if(!currentLevel) return;
+  if(!confirm(`確定要重置 ${currentLevel} 的學習紀錄嗎？（單字庫不會刪）`)) return;
+  const learned=getLearned();
+  Object.keys(learned).forEach(w=>{ if(learned[w].level===currentLevel) delete learned[w]; });
+  saveLearned(learned);
+  renderToday([]);
+  renderReview();
+  updateStatsUI();
+  alert(`✅ 已重置 ${currentLevel}`);
+}
+function resetAll(){
+  if(!confirm("⚠️ 會刪除所有單字庫與學習紀錄，確定嗎？")) return;
+  localStorage.clear();
+  location.reload();
+}
+
+/* ===== 圖表 ===== */
+function lastNDays(n){
+  return [...Array(n)].map((_,i)=>{
+    const d=new Date();
+    d.setDate(d.getDate()-(n-1-i));
+    return d.toISOString().slice(0,10);
+  });
+}
+function startOfWeek(d){
+  const x=new Date(d);
+  const day=(x.getDay()+6)%7; // Mon=0
+  x.setDate(x.getDate()-day);
+  x.setHours(0,0,0,0);
+  return x;
+}
+function drawCharts(){ drawDailyChart(); drawWeeklyChart(); }
+
+function drawDailyChart(){
+  const ctx=dailyChart.getContext("2d");
+  const s=getStats();
+  const days=lastNDays(14);
+  const values=days.map(d=>s[d]||0);
+  const max=Math.max(...values,1);
+
+  ctx.clearRect(0,0,dailyChart.width,dailyChart.height);
+  ctx.strokeStyle="rgba(255,255,255,.15)";
+  ctx.beginPath(); ctx.moveTo(20,230); ctx.lineTo(580,230); ctx.stroke();
+
+  const barW=(560/days.length)-6;
+  days.forEach((d,i)=>{
+    const v=values[i];
+    const h=(v/max)*170;
+    const x=20+i*(barW+6);
+    const y=230-h;
+
+    ctx.fillStyle="rgba(52,168,83,.75)";
+    ctx.fillRect(x,y,barW,h);
+
+    ctx.fillStyle="rgba(241,243,244,.85)";
+    ctx.font="12px system-ui";
+    ctx.fillText(String(v), x+2, Math.max(y-6, 14));
+
+    if(i%3===0){
+      ctx.fillStyle="rgba(154,160,166,.85)";
+      ctx.font="11px system-ui";
+      ctx.fillText(d.slice(5), x, 250);
+    }
+  });
+}
+
+function drawWeeklyChart(){
+  const ctx=weeklyChart.getContext("2d");
+  const s=getStats();
+
+  const now=new Date();
+  const thisMon=startOfWeek(now);
+  const weekStarts=[...Array(8)].map((_,i)=>{
+    const d=new Date(thisMon);
+    d.setDate(d.getDate() - (7*(7-i)));
+    return d;
+  });
+
+  const sums=weekStarts.map(ws=>{
+    let sum=0;
+    for(let i=0;i<7;i++){
+      const d=new Date(ws);
+      d.setDate(d.getDate()+i);
+      sum += s[d.toISOString().slice(0,10)] || 0;
+    }
+    return sum;
+  });
+
+  const max=Math.max(...sums,1);
+  ctx.clearRect(0,0,weeklyChart.width,weeklyChart.height);
+
+  ctx.strokeStyle="rgba(255,255,255,.15)";
+  ctx.beginPath(); ctx.moveTo(20,230); ctx.lineTo(580,230); ctx.stroke();
+
+  ctx.strokeStyle="rgba(138,180,248,.9)";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  sums.forEach((v,i)=>{
+    const x=20 + i*(560/(sums.length-1));
+    const y=230 - (v/max)*170;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  sums.forEach((v,i)=>{
+    const x=20 + i*(560/(sums.length-1));
+    const y=230 - (v/max)*170;
+
+    ctx.fillStyle="rgba(138,180,248,1)";
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+
+    ctx.fillStyle="rgba(241,243,244,.85)";
+    ctx.font="12px system-ui";
+    ctx.fillText(String(v), x-6, Math.max(y-10, 16));
+
+    ctx.fillStyle="rgba(154,160,166,.85)";
+    ctx.font="11px system-ui";
+    const label=weekStarts[i].toISOString().slice(5,10);
+    ctx.fillText(label, x-14, 250);
+  });
+}
+
+/* ===== 綁事件 ===== */
+homeBtn.addEventListener("click", goHome);
+$("drawBtn").addEventListener("click", drawToday);
+$("drawTodayBtn").addEventListener("click", drawToday);
+$("saveWordsBtn").addEventListener("click", saveWords);
+$("resetLevelBtn").addEventListener("click", resetLevel);
+$("resetAllBtn").addEventListener("click", resetAll);
+levelSelect.addEventListener("change", (e)=>openLevel(e.target.value));
+document.querySelectorAll(".level-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>openLevel(btn.dataset.level), {passive:true});
+});
+
+/* ✅ PWA: 註冊 Service Worker（必須在 https 或 localhost 才能成功） */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      await navigator.serviceWorker.register("./sw.js");
+      // console.log("SW registered");
+    } catch (e) {
+      // console.log("SW failed", e);
+    }
+  });
+}
+</script>
+</body>
+</html>
